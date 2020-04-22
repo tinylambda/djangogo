@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import copy
+import configparser
 from core.utils import ConfigWriterWithRepeatKeys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -161,4 +163,141 @@ for setting_key in UWSGI_INSTANCE_CONFIG:
     setting_value = UWSGI_INSTANCE_CONFIG[setting_key]
     UWSGI_CONFIG.set('uwsgi', setting_key, setting_value)
 
+
+CIRCUSD_CONFIG = configparser.ConfigParser()
+CIRCUSD_CONF_FILENAME = os.path.join(BASE_DIR, 'run', f'circusd.{PROJECT_TAG}.ini')
+CIRCUSD_PID_FILENAME = os.path.join(BASE_DIR, 'run', f'circusd.{PROJECT_TAG}.pid')
+CIRCUSD_LOG_ROOT_DIR = f'/tmp/log/{PROJECT_TAG}/circus'
+
+CIRCUSD_STATIC_CONFIG_LIST = [
+    {
+        'name': 'circus',
+        'settings': {
+            'endpoint': 'tcp://127.0.0.1:5555',
+            'endpoint_owner': 'None',
+            'pubsub_endpoint': 'tcp://127.0.0.1:5556',
+            'statsd': 'False',
+            'stats_endpoint': 'tcp://127.0.0.1:5557',
+            'stats_close_outputs': 'False',
+            'check_delay': '5',
+            'stream_backend': 'thread',
+            'warmup_delay': '0',
+            'debug': 'False',
+            'debug_gc': 'False',
+            'pidfile': os.path.join(BASE_DIR, 'run', f'circusd.{PROJECT_TAG}.pid'),
+            'umask': '002',
+            'loglevel': 'INFO',
+            'logoutput': '-',
+            'loggerconfig': ''
+        }
+     },
+]
+
+for CIRCUSD_STATIC_CONFIG in CIRCUSD_STATIC_CONFIG_LIST:
+    section_name = CIRCUSD_STATIC_CONFIG['name']
+    settings = CIRCUSD_STATIC_CONFIG['settings']
+
+    CIRCUSD_CONFIG.add_section(section_name)
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
+
+
+CIRCUS_WATCHER_DEFAULT_SETTINGS = {
+    'cmd': '/bin/cat',
+    'args': '',
+    'shell': 'False',
+    'shell_args': 'None',
+    'working_dir': BASE_DIR,
+    # 'uid': '',  # current uid is the default
+    # 'gid': '',  # current gid is the default
+    'copy_env': 'True',  # If true, the local env vars will be copied and passed to the workers when spawning them.
+    'copy_path': 'False',  # If true, sys.path is passed to the subprocess env using PYTHONPATH. copy_env has to be True
+    'warmup_delay': '1',
+    'autostart': 'False',
+    'numprocesses': '1',
+    'stderr_stream.class': 'FileStream',
+    'stderr_stream.filename': os.path.join(CIRCUSD_LOG_ROOT_DIR, '{watcher_name:s}.error.log'),
+    'stderr_stream.time_format': '%%Y-%%m-%%d %%H:%%M:%%S',
+    'stderr_stream.max_bytes': '1073741824',
+    'stderr_stream.backup_count': '5',
+    'stdout_stream.class': 'FileStream',
+    'stdout_stream.filename': os.path.join(CIRCUSD_LOG_ROOT_DIR, '{watcher_name:s}.info.log'),
+    'stdout_stream.time_format': '%%Y-%%m-%%d %%H:%%M:%%S',
+    'stdout_stream.max_bytes': '1073741824',
+    'stdout_stream.backup_count': '5',
+    'close_child_stdin': 'True',
+    'close_child_stdout': 'False',
+    'close_child_stderr': 'False',
+    'send_hup': 'False',
+    'stop_signal': 'INT',
+    'stop_children': 'False',
+    'max_retry': '2',
+    'graceful_timeout': '30',
+    'priority': '0',
+    'singleton': 'True',
+    'use_sockets': 'False',
+    # 'max_age': '100000',  # Default disabled
+    # 'max_age_variance': ,  # Variate above
+    'virtualenv': os.path.join(BASE_DIR, 'venv'),  # root of a virtualenv directory. need copy_env to be True
+    # 'virtualenv_py_ver': '',  # specify python version, must be used with virtualenv
+    'respawn': 'True',  # If set to False, the processes handled by a watcher will not be respawned automatically.
+    # 'use_papa': 'False',
+}
+
+CIRCUS_SOCKETS = [
+]
+
+CIRCUS_ENVS = [
+    {
+        'name': 'djangogo_http',
+        'settings': {
+        }
+    }
+]
+
+CIRCUS_WATCHERS = [
+    {
+        'name': 'djangogo_http',
+        'settings': {
+            'cmd': 'python manage.py uwsgi start',
+            'stop_signal': 'INT',
+            'singleton': 'True',
+            'autostart': 'True',
+            'use_sockets': 'False',
+        }
+    }
+]
+
+for CIRCUS_SOCKET in CIRCUS_SOCKETS:
+    name = CIRCUS_SOCKET['name']
+    settings = CIRCUS_SOCKET['settings']
+    section_name = f'socket:{name}'
+
+    CIRCUSD_CONFIG.add_section(section_name)
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
+
+for CIRCUS_ENV in CIRCUS_ENVS:
+    name = CIRCUS_ENV['name']
+    settings = CIRCUS_ENV['settings']
+    section_name = f'env:{name}'
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
+
+for CIRCUS_WATCHER in CIRCUS_WATCHERS:
+    name = CIRCUS_WATCHER['name']
+    watcher_settings = CIRCUS_WATCHER['settings']
+    settings = copy.copy(CIRCUS_WATCHER_DEFAULT_SETTINGS)
+    settings.update(watcher_settings)
+    section_name = f"watcher:{name}"
+    render_context = {"watcher_name": name}
+
+    CIRCUSD_CONFIG.add_section(section_name)
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        setting_value = setting_value.format(**render_context)
+        CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
 
