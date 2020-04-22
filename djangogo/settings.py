@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from core.utils import ConfigWriterWithRepeatKeys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -126,6 +128,37 @@ STATIC_ROOT = f'/tmp/{PROJECT_TAG}/static_root/'  # Change this as needed
 AUTH_USER_MODEL = 'accounts.User'
 
 
+UWSGI_CONFIG = ConfigWriterWithRepeatKeys()
+UWSGI_CONF_FILENAME = os.path.join(BASE_DIR, 'run', f'uwsgi.{PROJECT_TAG}.ini')
 
+UWSGI_INSTANCE_CONFIG = {
+    'env': 'DJANGO_SETTINGS_MODULE=djangogo.settings',
+    'chdir': BASE_DIR,
+    'module': WSGI_APPLICATION.replace('.application', ':application'),
+    'master': 'true',
+    'pidfile': os.path.join(BASE_DIR, 'run', f'uwsgi.{PROJECT_TAG}.pid'),
+    'http': ['0.0.0.0:8000'],
+    'socket': '127.0.0.1:0',
+    'harakiri': '20',
+    'vacuum': 'true',
+    'processes': '2',
+    'threads': '2',
+    'enable-threads': 'true',
+    'no-threads-wait': 'true',
+    'max-requests': '5000',
+    'max-requests-delta': '3',
+    'lazy-apps': 'true',
+    'touch-chain-reload': os.path.join(BASE_DIR, 'run', f'uwsgi.{PROJECT_TAG}.touch'),
+    'disable-logging': 'false',
+    'log-master': 'true',  # delegate logging to master process
+    'stats': '0.0.0.0:9191',
+    'stats-http': 'true',
+    'static-map': [f'/static={STATIC_ROOT}'],
+}
+
+UWSGI_CONFIG.add_section('uwsgi')
+for setting_key in UWSGI_INSTANCE_CONFIG:
+    setting_value = UWSGI_INSTANCE_CONFIG[setting_key]
+    UWSGI_CONFIG.set('uwsgi', setting_key, setting_value)
 
 
