@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
+import atexit
 import os
 import copy
 import configparser
@@ -300,4 +301,14 @@ for CIRCUS_WATCHER in CIRCUS_WATCHERS:
         setting_value = settings[setting_key]
         setting_value = setting_value.format(**render_context)
         CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
+
+
+@atexit.register
+def cleanup():
+    """
+    Will be called before the worker process exits
+    Add more cleanup as you need.
+    """
+    pass
+
 
