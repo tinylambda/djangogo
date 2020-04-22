@@ -247,6 +247,13 @@ CIRCUS_WATCHER_DEFAULT_SETTINGS = {
 }
 
 CIRCUS_SOCKETS = [
+    {
+        'name': 'djangogo_in_asgi_socket',
+        'settings': {
+            'host': '0.0.0.0',
+            'port': '20000',
+        }
+    }
 ]
 
 CIRCUS_ENVS = [
@@ -254,7 +261,12 @@ CIRCUS_ENVS = [
         'name': 'djangogo_http',
         'settings': {
         }
-    }
+    },
+    {
+        'name': 'djangogo_in_asgi',
+        'settings': {
+        }
+    },
 ]
 
 CIRCUS_WATCHERS = [
@@ -267,7 +279,18 @@ CIRCUS_WATCHERS = [
             'autostart': 'True',
             'use_sockets': 'False',
         }
-    }
+    },
+    {
+        'name': 'djangogo_in_asgi',
+        'settings': {
+            'cmd': 'python manage.py daphne start --fd $(circus.sockets.djangogo_in_asgi_socket) '
+                   '--app djangogo.asgi:application',
+            'use_sockets': 'True',
+            'singleton': 'False',
+            'autostart': 'False',
+            'numprocesses': '3',
+        }
+    },
 ]
 
 for CIRCUS_SOCKET in CIRCUS_SOCKETS:
