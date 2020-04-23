@@ -326,6 +326,121 @@ for CIRCUS_WATCHER in CIRCUS_WATCHERS:
         CIRCUSD_CONFIG.set(section_name, setting_key, setting_value)
 
 
+SUPERVISORD_CONFIG = configparser.ConfigParser()
+SUPERVISORD_CONF_FILENAME = os.path.join(BASE_DIR, 'run', f'supervisord.{PROJECT_TAG}.ini')
+SUPERVISORD_LOG_ROOT_PATH = f'/tmp/log/{PROJECT_TAG}/supervisor'
+
+SUPERVISORD_STATIC_CONFIG_LIST = [
+    {
+        'name': 'inet_http_server',
+        'settings': {
+            'port': '0.0.0.0:9002',
+            'username': 'username',
+            'password': 'password',
+        }
+    },
+    {
+        'name': 'supervisord',
+        'settings': {
+            'logfile': os.path.join(SUPERVISORD_LOG_ROOT_PATH, 'supervisord.log'),
+            'logfile_maxbytes': '100MB',
+            'logfile_backups': '5',
+            'loglevel': 'info',
+            'pidfile': os.path.join(BASE_DIR, 'run', f'supervisord.{PROJECT_TAG}.pid'),
+            'nodaemon': 'false',
+            'silent': 'false',  # no logs to stdout if true; default false
+            'minfds': '1024',
+            'minprocs': '200',
+            'umask': '022',
+            # 'user': 'nobody',
+            'identifier': 'supervisor',  # supervisord identifier, default is 'supervisor'
+            'directory': BASE_DIR,  # default is not to cd during start
+            'nocleanup': 'false',
+            'childlogdir': '/tmp',
+            'environment': '',
+            'strip_ansi': 'false',
+        }
+    },
+    {
+        'name': 'rpcinterface:supervisor',
+        'settings': {
+            'supervisor.rpcinterface_factory': 'supervisor.rpcinterface:make_main_rpcinterface'
+        }
+    },
+    {
+        'name': 'supervisorctl',
+        'settings': {
+            'serverurl': 'http://127.0.0.1:9002',
+            'username': 'username',
+            'password': 'password',
+            'prompt': '(supervisor)',
+            'history_file': '~/.sc_history',
+        }
+    }
+]
+
+for SUPERVISORD_STATIC_CONFIG in SUPERVISORD_STATIC_CONFIG_LIST:
+    section_name = SUPERVISORD_STATIC_CONFIG['name']
+    settings = SUPERVISORD_STATIC_CONFIG['settings']
+
+    SUPERVISORD_CONFIG.add_section(section_name)
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        SUPERVISORD_CONFIG.set(section_name, setting_key, setting_value)
+
+SUPERVISOR_PROGRAM_DEFAULT_SETTINGS = {
+    'command': '/bin/cat',
+    'process_name': '%(program_name)s',
+    'numprocs': '1',
+    'directory': BASE_DIR,
+    'umask': '022',
+    'priority': '999',
+    'autostart': 'false',
+    'startsecs': '3',
+    'startretries': '2',
+    'autorestart': 'unexpected',
+    'exitcodes': '0,2',
+    'stopsignal': 'TERM',
+    'stopwaitsecs': '1200',
+    'stopasgroup': 'false',  # send stop signal to the UNIX process group (default false)
+    'killasgroup': 'false',  # SIGKILL the UNIX process group (def false)
+    # 'user': 'nobody',
+    'redirect_stderr': 'true',  # redirect proc stderr to stdout
+    'stdout_logfile': os.path.join(SUPERVISORD_LOG_ROOT_PATH, '%(program_name)s.info.log'),
+    'stdout_logfile_maxbytes': '500MB',
+    'stdout_logfile_backups': '10',
+    'stdout_capture_maxbytes': '0',
+    'stdout_events_enabled': 'false',
+    'stdout_syslog': 'false',
+    'stderr_logfile': os.path.join(SUPERVISORD_LOG_ROOT_PATH, '%(program_name)s.error.log'),
+    'stderr_logfile_maxbytes': '500MB',
+    'stderr_logfile_backups': '10',
+    'stderr_capture_maxbytes': '0',
+    'stderr_events_enabled': 'false',
+    'stderr_syslog': 'false',
+    'environment': f'',
+}
+
+SUPERVISOR_PROGRAMS = [
+    # https://stackoverflow.com/questions/19510195/how-to-use-supervisor-fo-start-stop-uwsgi-application
+    # https://uwsgi-docs.readthedocs.io/en/latest/Management.html
+    {'name': 'chaos_http', 'settings': {'command': 'python manage.py uwsgi start', 'stopsignal': 'INT',
+                                        'autostart': 'true'}},
+]
+
+# https://github.com/celery/celery/issues/2700
+for SUPERVISOR_PROGRAM in SUPERVISOR_PROGRAMS:
+    section_name = f'program:{SUPERVISOR_PROGRAM["name"]}'
+    program_settings = SUPERVISOR_PROGRAM['settings']
+    settings = copy.copy(SUPERVISOR_PROGRAM_DEFAULT_SETTINGS)
+    settings.update(program_settings)
+
+    SUPERVISORD_CONFIG.add_section(section_name)
+    for setting_key in settings:
+        setting_value = settings[setting_key]
+        SUPERVISORD_CONFIG.set(section_name, setting_key, setting_value)
+
+
 @atexit.register
 def cleanup():
     """
