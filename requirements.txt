@@ -25,5 +25,7 @@ thrift==0.13.0
 sasl==0.2.1
 thrift-sasl==0.3.0
 circus==0.16.1
+eventlet==0.25.2
+gevent==20.4.0
 
 
