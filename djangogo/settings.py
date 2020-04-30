@@ -134,6 +134,34 @@ STATIC_ROOT = f'/tmp/{PROJECT_TAG}/static_root/'  # Change this as needed
 
 AUTH_USER_MODEL = 'accounts.User'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'default': {
+            'format': '{levelname}\t{asctime}\t{pathname}\t{lineno:d}\t{process:d}\t{message}',
+            'style': '{',
+        }
+    },
+
+    'handlers': {
+        'console_log_handler': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        }
+    },
+
+    'loggers': {
+        'default': {
+            'handlers': ['console_log_handler'],
+            'level': 'INFO',
+            'propagate': False,
+        }
+    }
+}
+
 
 CORS_ORIGIN_WHITELIST = [
     "http://127.0.0.1:4200",
