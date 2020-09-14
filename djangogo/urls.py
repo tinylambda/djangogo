@@ -16,6 +16,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+# for development mode
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+####
+# static
+# This helper function works only in debug mode and only if
+# the given prefix is local (e.g. /static/) and not a URL (e.g. http://static.example.com/).
+
+# Also this helper function only serves the actual STATIC_ROOT
+# folder; it doesn’t perform static files discovery like django.contrib.staticfiles.
+
