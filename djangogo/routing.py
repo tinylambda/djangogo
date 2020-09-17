@@ -1,11 +1,11 @@
+import django
+django.setup()
+
+
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
 import chat.routing
-
-
-import django
-django.setup()
 
 
 application = ProtocolTypeRouter({
