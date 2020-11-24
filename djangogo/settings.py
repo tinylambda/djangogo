@@ -81,6 +81,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'djangogo.wsgi.application'
+ASGI_APPLICATION = 'djangogo.routing.application'
 
 CHANNEL_LAYERS = {
     'default': {
