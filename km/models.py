@@ -12,10 +12,7 @@ class Concept(models.Model):
     time_updated = models.DateTimeField(verbose_name="Time Updated", auto_now=True)
 
     def __str__(self):
-        return f'' \
-               f'{self.name} ' \
-               f'is {"a root concept" if not self.is_a else self.is_a.name}' \
-               f'that {"can be initialized" if not self.is_abstract else "cannot be initialized"}'
+        return f'Concept<{self.name_readable}>'
 
 
 class Attr(models.Model):

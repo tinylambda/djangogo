@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'core',
     'km',
     'config',
+    'rule',
 ]
 
 MIDDLEWARE = [
