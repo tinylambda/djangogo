@@ -25,3 +25,6 @@ class Attr(models.Model):
     class Meta:
         unique_together = ('concept', 'name')
 
+    def __str__(self):
+        return f'Attr<{self.name_readable}>'
+
