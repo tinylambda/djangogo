@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'km',
     'config',
     'rule',
+    'game',
+    'state',
 ]
 
 MIDDLEWARE = [
