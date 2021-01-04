@@ -3,6 +3,8 @@ from django.contrib import admin
 from .models import State
 from .models import Attr
 
+from config.models import CommonConfig
+
 
 class AttrInline(admin.TabularInline):
     model = Attr
@@ -13,10 +15,20 @@ class AttrInline(admin.TabularInline):
     show_change_link = True
 
 
+class CommonConfigInline(admin.TabularInline):
+    model = CommonConfig
+    extra = 0
+    fields = ('config_id', 'config')
+    ordering = ('time_added',)
+    show_full_result_count = True,
+    show_change_link = True
+
+
 @admin.register(State)
 class StateAdmin(admin.ModelAdmin):
     inlines = [
         AttrInline,
+        CommonConfigInline,
     ]
     fields = ('name_readable', 'name', 'is_a',)
     list_display = ('name_readable', 'name', 'is_a',)
