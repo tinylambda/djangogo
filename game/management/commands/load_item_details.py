@@ -4,7 +4,7 @@ import openpyxl
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
-from km.models import Concept
+from state.models import State
 from config.models import CommonConfig
 
 
@@ -29,18 +29,24 @@ class Command(BaseCommand):
         i = 0
         for row in sheet:
             i += 1
-            if i <= 3:
+            if i <= 2:
                 continue
-            if i == 4:
+            if i == 3:
                 headers = [c.value for c in row]
                 continue
 
             values = [c.value for c in row]
-            item_item = dict(zip(headers, values))
-            config[item_item['config_id']] = item_item
+            config_item = dict(zip(headers, values))
+            item_id = config_item.pop('item_id')
+            config_item.update({
+                'config_id': item_id
+            })
+            if None in config_item:
+                config_item.pop(None)
+            config[config_item['config_id']] = config_item
 
-        concept_item = Concept.objects.get(name='item')
-        CommonConfig.objects.filter(config_for=concept_item).delete()
+        state_item = State.objects.get(name='item')
+        CommonConfig.objects.filter(config_for=state_item).delete()
         for config_id in config:
             if config_id is None:
                 break
@@ -52,7 +58,7 @@ class Command(BaseCommand):
                 **self.DUMP_KWARGS
             )
             common_config = CommonConfig.objects.create(
-                config_for=concept_item,
+                config_for=state_item,
                 config_id=config_id,
                 config=config_body
             )

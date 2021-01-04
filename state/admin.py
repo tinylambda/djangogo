@@ -30,7 +30,7 @@ class StateAdmin(admin.ModelAdmin):
         AttrInline,
         CommonConfigInline,
     ]
-    fields = ('name_readable', 'name', 'is_a',)
+    fields = ('name_readable', 'name', 'is_a', 'instance_id_template')
     list_display = ('name_readable', 'name', 'is_a',)
     search_fields = ('name_readable', 'name', 'is_a__name_readable')
     ordering = ('-time_added', )

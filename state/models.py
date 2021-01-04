@@ -6,6 +6,7 @@ from .defaults import ATTR_OPTIONS_DEFAULT
 class State(models.Model):
     name = models.CharField(verbose_name='Name', max_length=128, unique=True)
     name_readable = models.CharField(verbose_name='Readable name', max_length=128, unique=True)
+    instance_id_template = models.CharField(verbose_name='Instance ID template', max_length=128, default='')
     is_a = models.ForeignKey('State', verbose_name='Parent State', on_delete=models.CASCADE, blank=True, null=True)
     time_added = models.DateTimeField(verbose_name="Time Added", auto_now_add=True)
     time_updated = models.DateTimeField(verbose_name="Time Updated", auto_now=True)

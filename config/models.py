@@ -1,6 +1,5 @@
 from django.db import models
 
-from km.models import Concept
 from state.models import State
 
 from .defaults import CONFIG_DEFAULT
