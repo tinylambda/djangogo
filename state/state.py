@@ -1,100 +1,10 @@
 import typing
-import random
-import string
 import json
 
 from .models import State
 from .models import Attr
+from .base import AttrBase, StateBase
 from config.models import CommonConfig
-
-
-class AttrBase:
-    BUILTIN_BASE_TYPES = (
-        'string',
-        'int',
-        'float',
-        'boolean',
-    )
-    BUILTIN_CONTAINER_TYPES = (
-        'map',
-        'list',
-    )
-
-    @classmethod
-    def get_name(cls):
-        return cls.name
-
-    @classmethod
-    def get_name_readable(cls):
-        return cls.name_readable
-
-    @classmethod
-    def get_data_type(cls):
-        return cls.option_type
-
-    @classmethod
-    def get_container(cls):
-        return cls.option_container
-
-    @classmethod
-    def get_container_config(cls):
-        return cls.option_container_config
-
-
-class StateBase:
-    STATE_PREFIX = 'state__'
-    STATE_ATTR_PREFIX = 'attr__'
-
-    def __init__(self):
-        self.buffer_info: dict = {}
-        self.instance_id: str = None
-        self.create_ts: int = None
-        self.instance_id_template = None
-
-    @property
-    def random_str(self):
-        data = ''.join(random.sample(string.ascii_letters + string.digits, 6))
-        return data
-
-    def serialize(self) -> typing.Dict:
-        """
-        Serialize existing instance or newly created instance to a dictionary
-        """
-        pass
-
-    def deserialize(self, data: typing.Dict):
-        """
-        Deserialize from existing instance data
-        """
-        pass
-
-    @classmethod
-    def __attribute_class_name__(cls, name):
-        return f'{cls.STATE_ATTR_PREFIX}{name}'
-
-    @classmethod
-    def get_attribute_class(cls, name: str):
-        attribute_name: str = cls.__attribute_class_name__(name)
-        try:
-            attribute_class = getattr(cls, attribute_name)
-        except AttributeError:
-            attribute_class = None
-        return attribute_class
-
-    @classmethod
-    def get_all_attribute_classes(cls):
-        attribute_classes = []
-        for item in dir(cls):
-            if item.startswith(cls.STATE_ATTR_PREFIX):
-                item_value = getattr(cls, item)
-                assert issubclass(item_value, AttrBase)
-                attribute_classes.append(item_value)
-
-        all_attributes = {
-            item.name: item
-            for item in attribute_classes
-        }
-        return all_attributes
 
 
 class States:
@@ -134,6 +44,7 @@ class States:
     def _load_state_class(cls, state_db_object: State):
         name = state_db_object.name
         name_readable = state_db_object.name_readable
+        instance_id_template = state_db_object.instance_id_template
         is_a: State = state_db_object.is_a
 
         if is_a is None:
@@ -145,6 +56,7 @@ class States:
         class_dict: typing.Dict = {
             'name': name,
             'name_readable': name_readable,
+            'instance_id_template': instance_id_template,
         }
         state_class = type(name, bases, class_dict)
         # Update attrs of this concept
@@ -152,10 +64,11 @@ class States:
         for attr_db_object in attr_db_objects:
             attr_class = cls._load_attr_class(attr_db_object)
             attr_name = attr_db_object.name
+            attr_instance = attr_class()
             setattr(
                 state_class,
                 f'{StateBase.STATE_ATTR_PREFIX}{attr_name}',
-                attr_class
+                attr_instance
             )
 
         # Update configs of this concept
@@ -176,20 +89,22 @@ class States:
         name = attr.name
         options: typing.Dict = json.loads(attr.options)
 
-        cls_dict = {}
+        class_dict = {}
         option_type = options.get('type')
         option_default = options.get('default')
         option_container = options.get('container')
         option_container_config: typing.Dict = options.get('container_config')
 
-        cls_dict.update({
+        class_dict.update({
             'name': name,
             'name_readable': name_readable,
+            'fullname': f'{attr.state.name}.state.{attr.name}',
+            'fullname_readable': f'{attr.state.name_readable}{attr.name_readable}',
             'option_type': option_type,
             'option_default': option_default,
             'option_container': option_container,
             'option_container_config': option_container_config,
         })
 
-        attr_cls = type(name, (AttrBase, ), cls_dict)
-        return attr_cls
+        attr_class = type(name, (AttrBase, ), class_dict)
+        return attr_class
