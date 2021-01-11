@@ -16,6 +16,12 @@ class ConfigRule(models.Model):
         return f'ConfigRule<{self.output_keys}>'
 
 
-class ConstraintRule(models.Model):
-    pass
+class EventRule(models.Model):
+    name = models.CharField(verbose_name='Event Name', max_length=128)
+    preconditions = models.TextField()
+    imply = models.TextField()
+    actions = models.TextField()
+    auto_trigger = models.BooleanField()
+    time_added = models.DateTimeField(verbose_name="Time Added", auto_now_add=True)
+    time_updated = models.DateTimeField(verbose_name="Time Updated", auto_now=True)
 
