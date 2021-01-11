@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import CommonConfig
+
+
+@admin.register(CommonConfig)
+class CommonConfigAdmin(admin.ModelAdmin):
+    pass
+
