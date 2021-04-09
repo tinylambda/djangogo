@@ -18,7 +18,7 @@ jupyter==1.0.0
 pyyaml==5.4
 kafka-python==1.4.6
 pillow==6.2.2
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 django-cors-headers==3.2.1
 pyhive==0.6.1
 thrift==0.13.0
