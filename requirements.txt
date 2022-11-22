@@ -17,7 +17,7 @@ pytest-cov==2.7.1
 jupyter==1.0.0
 pyyaml==5.4
 kafka-python==1.4.6
-pillow==9.0.1
+pillow==9.3.0
 djangorestframework==3.11.2
 django-cors-headers==3.2.1
 pyhive==0.6.1
